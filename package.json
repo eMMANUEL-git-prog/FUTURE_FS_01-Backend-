@@ -4,7 +4,7 @@
   "description": "Express backend for portfolio website",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "nodemon src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "migrate": "node -r dotenv/config scripts/migrate.js"
@@ -27,6 +27,7 @@
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "nodemailer": "^7.0.9",
+    "nodemon": "^3.1.10",
     "pg": "^8.11.3"
   },
   "devDependencies": {
@@ -38,6 +39,6 @@
     "@types/node": "^20.10.5",
     "@types/pg": "^8.10.9",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3"
+    "typescript": "^5.9.3"
   }
 }
