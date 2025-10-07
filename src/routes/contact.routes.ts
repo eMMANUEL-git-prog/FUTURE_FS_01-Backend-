@@ -1,7 +1,8 @@
 import { Router } from "express";
-import { body, validationResult } from "express-validator";
 import { query } from "../config/database";
 import { sendContactEmail } from "../config/email"; // ✅ add this
+import { Request, Response } from "express";
+import { body, validationResult } from "express-validator";
 
 const router = Router();
 
@@ -14,7 +15,7 @@ router.post(
     body("subject").notEmpty().withMessage("Subject is required"),
     body("message").notEmpty().withMessage("Message is required"),
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
