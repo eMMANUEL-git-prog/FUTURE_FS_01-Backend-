@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "description": "Express backend for portfolio website",
   "main": "dist/server.js",
-  "scripts": {
-    "dev": "nodemon src/server.ts",
+ "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
-    "migrate": "node -r dotenv/config scripts/migrate.js"
+    "dev": "ts-node src/server.ts"
   },
   "keywords": [
     "express",
