@@ -1,19 +1,17 @@
-// src/routes/auth.routes.ts
-import express from "express";
-import { query } from "../config/database";
-import { verifyPassword, signToken } from "../config/auth";
-import { Request, Response } from "express";
+import { Router, Request, Response } from "express";
 import { body, validationResult } from "express-validator";
+import { query } from "../config/database";
+import { sendContactEmail } from "../config/email";
 
+const router = Router();
 
-const router = express.Router();
-
-// POST /api/auth/login
 router.post(
-  "/login",
+  "/",
   [
+    body("name").trim().notEmpty().withMessage("Name is required"),
     body("email").isEmail().withMessage("Valid email is required"),
-    body("password").notEmpty().withMessage("Password is required"),
+    body("subject").trim().notEmpty().withMessage("Subject is required"),
+    body("message").trim().notEmpty().withMessage("Message is required"),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -21,44 +19,31 @@ router.post(
       return res.status(400).json({ errors: errors.array() });
     }
 
-    try {
-      const { email, password } = req.body;
+    const { name, email, subject, message } = req.body;
 
-      // Find user by email
-      const result = await query(
-        "SELECT id, email, password_hash, name FROM users WHERE email = $1",
-        [email]
+    try {
+      // 1️⃣ Save to DB
+      await query(
+        "INSERT INTO contact_messages (name, email, subject, message) VALUES ($1, $2, $3, $4)",
+        [name, email, subject, message]
       );
 
-      if (result.rows.length === 0) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
+      // 2️⃣ Send email via Resend
+      await sendContactEmail({ name, email, subject, message });
 
-      const user = result.rows[0];
+      console.log("✅ Contact form submitted and email sent");
 
-      // Verify password
-      const isValid = await verifyPassword(password, user.password_hash);
-      if (!isValid) {
-        return res.status(401).json({ error: "Invalid credentials" });
-      }
-
-      // Generate JWT token
-      const token = signToken({
-        userId: user.id,
-        email: user.email,
+      return res.status(201).json({
+        success: true,
+        message:
+          "Message sent successfully. Check your inbox for confirmation.",
       });
-
-      res.json({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-        },
+    } catch (error: any) {
+      console.error("❌ Contact form error:", error.message || error);
+      return res.status(500).json({
+        success: false,
+        error: "Failed to send message. Please try again later.",
       });
-    } catch (error) {
-      console.error("Login error:", error);
-      res.status(500).json({ error: "Internal server error" });
     }
   }
 );

@@ -1,8 +1,8 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
-import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes";
 import projectsRoutes from "./routes/projects.routes";
 import contactRoutes from "./routes/contact.routes";
@@ -51,7 +51,12 @@ app.use((req, res) => {
 
 // Error handler
 app.use(
-  (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  (
+    err: any,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
     console.error("Server error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
@@ -62,7 +67,9 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(
-    `🌐 CORS enabled for: ${process.env.FRONTEND_URL || "http://localhost:3000"}`
+    `🌐 CORS enabled for: ${
+      process.env.FRONTEND_URL || "http://localhost:3000"
+    }`
   );
 });
 

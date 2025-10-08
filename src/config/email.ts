@@ -1,72 +1,51 @@
-import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
 
-// Create reusable transporter
-export const createEmailTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || "smtp.gmail.com",
-    port: Number.parseInt(process.env.EMAIL_PORT || "587"),
-    secure: process.env.EMAIL_SECURE === "true",
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD,
-    },
-  });
-};
+import { Resend } from "resend";
 
-// Send contact form email
-export const sendContactEmail = async (data: {
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+interface ContactData {
   name: string;
   email: string;
   subject: string;
   message: string;
-}) => {
-  const transporter = createEmailTransporter();
+}
 
-  // 1️⃣ Email to YOU (admin)
-  const adminMail = {
-    from: `"${data.name}" <${process.env.EMAIL_USER}>`,
-    to: process.env.EMAIL_RECIPIENT || process.env.EMAIL_USER,
-    replyTo: data.email,
-    subject: `Portfolio Contact: ${data.subject}`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">New Contact Form Submission</h2>
+export const sendContactEmail = async (data: ContactData) => {
+  try {
+    // Send to YOU (portfolio owner)
+    await resend.emails.send({
+      from: `${process.env.SITE_NAME} <${process.env.FROM_EMAIL}>`,
+      to: process.env.EMAIL_RECIPIENT!,
+      replyTo: data.email, // user’s email so you can reply directly
+      subject: `New Contact Message: ${data.subject}`,
+      html: `
+        <h2>New Contact Form Submission</h2>
         <p><strong>Name:</strong> ${data.name}</p>
         <p><strong>Email:</strong> ${data.email}</p>
         <p><strong>Subject:</strong> ${data.subject}</p>
         <p><strong>Message:</strong></p>
-        <p>${data.message.replace(/\n/g, "<br>")}</p>
-      </div>
-    `,
-  };
+        <p>${data.message}</p>
+      `,
+    });
 
-  await transporter.sendMail(adminMail);
-
-  // 2️⃣ Auto-reply to the sender
-  const confirmationMail = {
-    from: `"${process.env.SITE_NAME || "Emmanuel"}" <${
-      process.env.EMAIL_USER
-    }>`,
-    to: data.email,
-    subject: `Thanks for reaching out, ${data.name}!`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb;">Thank you for your message!</h2>
+    // Optional: Auto-reply to sender
+    await resend.emails.send({
+      from: `${process.env.SITE_NAME} <${process.env.FROM_EMAIL}>`,
+      to: data.email,
+      subject: `Thanks for contacting ${process.env.SITE_NAME}!`,
+      html: `
         <p>Hi ${data.name},</p>
-        <p>I've received your message about "<strong>${
-          data.subject
-        }</strong>" and will get back to you shortly.</p>
-        <p>Here’s a copy of what you sent:</p>
-        <blockquote style="border-left: 4px solid #2563eb; padding-left: 12px; color: #555;">
-          ${data.message.replace(/\n/g, "<br>")}
-        </blockquote>
-        <p>Best regards,<br><strong>${
-          process.env.SITE_NAME || "Emmanuel"
-        }</strong></p>
-        <p style="font-size: 12px; color: #888;">This is an automated confirmation message.</p>
-      </div>
-    `,
-  };
+        <p>Thanks for reaching out! I’ve received your message and will get back to you shortly.</p>
+        <br/>
+        <p>Best regards,<br/>${process.env.SITE_NAME}</p>
+      `,
+    });
 
-  await transporter.sendMail(confirmationMail);
+    console.log("✅ Emails sent successfully via Resend.");
+  } catch (error) {
+    console.error("❌ Error sending email via Resend:", error);
+    throw new Error("Failed to send email");
+  }
 };
